@@ -1,8 +1,10 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 String _selectedAlgorithm = 'Minimax Algorithm'; // Default algorithm
-
+int numberOfNodes = 0;
+bool lock = true;
 
 class NumSet {
   int value = 0;
@@ -130,8 +132,8 @@ class _GameOptionsPageState extends State<GameOptionsPage> {
       items: List.generate(
         11,
         (index) => DropdownMenuItem<int>(
-          value: index + 15,
-          child: Text('${index + 15}'),
+          value: index + 5,
+          child: Text('${index + 5}'),
         ),
       ),
     );
@@ -303,6 +305,7 @@ class _GamePageState extends State<GamePage> {
   }
 
   NumSet _bestMove(List<NumSet> possibleMoves, String algo){
+    numberOfNodes++;
     NumSet bestMove = NumSet([], 0, 0);
     int maxVal = 10;
     int val = 0;
@@ -325,7 +328,17 @@ class _GamePageState extends State<GamePage> {
     setState(() {
       NumSet oldSet = NumSet([], 0, 0);
       oldSet.clone(_gameNumbers);
+      DateTime? startTime;
+      if(lock){
+        startTime = DateTime.now();
+      }
       _gameNumbers.clone(_bestMove(getPossibleMoves(_gameNumbers), _selectedAlgorithm));
+      if(lock){
+        DateTime endTime = DateTime.now();
+        Duration executionTime = endTime!.difference(startTime!);
+        print("Execution time: ${executionTime.inMicroseconds} microseconds");
+        lock = false;
+      }
       _updatePreviousStrings();
       _updateComputerScore(oldSet, _gameNumbers);
       _currentPlayer = 'User';
@@ -437,6 +450,7 @@ class _GamePageState extends State<GamePage> {
           actions: [
             TextButton(
               onPressed: () {
+                lock = true;
                 Navigator.popUntil(
                     context,
                     ModalRoute.withName(
@@ -471,6 +485,9 @@ class _GamePageState extends State<GamePage> {
   }
 
   void _restartGame() {
+    lock = true;
+    print("The number of visited nodes is ${numberOfNodes*2}");
+    numberOfNodes = 0;
     Navigator.of(context).pushReplacement(MaterialPageRoute(
         builder: (context) => GamePage(
               stringLength: widget.stringLength,
